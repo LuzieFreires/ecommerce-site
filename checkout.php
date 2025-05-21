@@ -9,7 +9,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $product_id = $_POST['product_id'] ?? null;
     $quantity = max(1, (int)($_POST['quantity'] ?? 1));
 
-    // Get product info
     $stmt = $pdo->prepare('SELECT * FROM products WHERE id = ?');
     $stmt->execute([$product_id]);
     $product = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -20,7 +19,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $total = $product['price'] * $quantity;
     }
 
-    // If payment processing triggered and no errors
     if (isset($_POST['process_payment']) && !$error) {
         $email = trim($_POST['email'] ?? '');
         $address = trim($_POST['address'] ?? '');
@@ -28,21 +26,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!$email || !$address) {
             $error = 'Email and address are required.';
         } else {
-            // Generate fake transaction ID
             $transaction_id = 'TRANS_' . time() . rand(1000, 9999);
 
             $pdo->beginTransaction();
             try {
-                // Insert order
                 $stmt = $pdo->prepare('INSERT INTO orders (guest_email, total_amount, shipping_address, transaction_id, status) VALUES (?, ?, ?, ?, ?)');
                 $stmt->execute([$email, $total, $address, $transaction_id, 'completed']);
                 $orderId = $pdo->lastInsertId();
 
-                // Insert order items
                 $stmt = $pdo->prepare('INSERT INTO order_items (order_id, product_id, quantity, price) VALUES (?, ?, ?, ?)');
                 $stmt->execute([$orderId, $product['id'], $quantity, $product['price']]);
 
-                // Insert transaction (simplified)
                 $stmt = $pdo->prepare('INSERT INTO transactions (transaction_id, customer_name, customer_email, description, amount, card_last4, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())');
                 $stmt->execute([
                     $transaction_id,
@@ -50,7 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $email,
                     "Purchase of {$product['name']} x $quantity",
                     $total,
-                    '1234', // dummy last 4 digits
+                    '1234', 
                     'completed'
                 ]);
 
