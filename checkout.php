@@ -1,9 +1,5 @@
 <?php
 require_once 'db.php';
-require_once 'vendor/autoload.php'; // You'll need to install Authorize.net SDK via Composer
-
-use net\authorize\api\contract\v1 as AnetAPI;
-use net\authorize\api\controller as AnetController;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Get product details
@@ -15,32 +11,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $total = $product['price'] * $quantity;
     
     if (isset($_POST['process_payment'])) {
-        // Process payment through Authorize.net
-        $merchantAuthentication = new AnetAPI\MerchantAuthenticationType();
-        $merchantAuthentication->setName(AUTHORIZENET_API_LOGIN_ID);
-        $merchantAuthentication->setTransactionKey(AUTHORIZENET_TRANSACTION_KEY);
-
-        $creditCard = new AnetAPI\CreditCardType();
-        $creditCard->setCardNumber($_POST['card_number']);
-        $creditCard->setExpirationDate($_POST['exp_year'] . "-" . $_POST['exp_month']);
-        $creditCard->setCardCode($_POST['cvv']);
-
-        $paymentType = new AnetAPI\PaymentType();
-        $paymentType->setCreditCard($creditCard);
-
-        $transactionRequestType = new AnetAPI\TransactionRequestType();
-        $transactionRequestType->setTransactionType("authCaptureTransaction");
-        $transactionRequestType->setAmount($total);
-        $transactionRequestType->setPayment($paymentType);
-
-        $request = new AnetAPI\CreateTransactionRequest();
-        $request->setMerchantAuthentication($merchantAuthentication);
-        $request->setTransactionRequest($transactionRequestType);
-
-        $controller = new AnetController\CreateTransactionController($request);
-        $response = $controller->executeWithApiResponse(\net\authorize\api\constants\ANetEnvironment::SANDBOX);
-
-        if ($response != null && $response->getMessages()->getResultCode() == "Ok") {
+        // Simulate payment processing
+        $transaction_id = 'TRANS_' . time() . rand(1000, 9999);
+        $payment_success = true; // In real world, this would be determined by payment gateway
+        
+        if ($payment_success) {
             // Save order to database
             $pdo->beginTransaction();
             try {
@@ -50,7 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $_POST['email'],
                     $total,
                     $_POST['address'],
-                    $response->getTransactionResponse()->getTransId(),
+                    $transaction_id,
                     'completed'
                 ]);
                 $orderId = $pdo->lastInsertId();
@@ -103,26 +78,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         <div class="form-group">
             <label>Card Number:</label>
-            <input type="text" name="card_number" required>
+            <input type="text" name="card_number" value="4111111111111111" readonly>
+            <small>(Demo: Using test card number)</small>
         </div>
         
         <div class="form-group">
             <label>Expiration Date:</label>
-            <select name="exp_month" required>
-                <?php for($i = 1; $i <= 12; $i++): ?>
-                    <option value="<?php echo str_pad($i, 2, '0', STR_PAD_LEFT); ?>"><?php echo str_pad($i, 2, '0', STR_PAD_LEFT); ?></option>
-                <?php endfor; ?>
-            </select>
-            <select name="exp_year" required>
-                <?php for($i = date('Y'); $i <= date('Y') + 10; $i++): ?>
-                    <option value="<?php echo $i; ?>"><?php echo $i; ?></option>
-                <?php endfor; ?>
-            </select>
+            <input type="text" value="12/25" readonly>
+            <small>(Demo: Using test expiration)</small>
         </div>
         
         <div class="form-group">
             <label>CVV:</label>
-            <input type="text" name="cvv" required>
+            <input type="text" value="123" readonly>
+            <small>(Demo: Using test CVV)</small>
         </div>
         
         <div class="form-group">
