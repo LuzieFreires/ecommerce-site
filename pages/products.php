@@ -17,7 +17,6 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <h1>Our Products</h1>
     <?php foreach($products as $product): ?>
         <div class="product">
-            <img src="../public/images/<?php echo htmlspecialchars($product['image_url']); ?>" alt="<?php echo htmlspecialchars($product['name']); ?>" width="200">
             <h2><?php echo htmlspecialchars($product['name']); ?></h2>
             <p><?php echo htmlspecialchars($product['description']); ?></p>
             <p>Price: $<?php echo number_format($product['price'], 2); ?></p>

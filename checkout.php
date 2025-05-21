@@ -1,8 +1,7 @@
 <?php
-require_once 'db.php';
+require_once ('config/db.php');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Get product details
     $stmt = $pdo->prepare('SELECT * FROM products WHERE id = ?');
     $stmt->execute([$_POST['product_id']]);
     $product = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -11,15 +10,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $total = $product['price'] * $quantity;
     
     if (isset($_POST['process_payment'])) {
-        // Simulate payment processing
         $transaction_id = 'TRANS_' . time() . rand(1000, 9999);
-        $payment_success = true; // In real world, this would be determined by payment gateway
+        $payment_success = true;
         
         if ($payment_success) {
-            // Save order to database
             $pdo->beginTransaction();
             try {
-                // Create order
                 $stmt = $pdo->prepare('INSERT INTO orders (guest_email, total_amount, shipping_address, transaction_id, status) VALUES (?, ?, ?, ?, ?)');
                 $stmt->execute([
                     $_POST['email'],
@@ -30,12 +26,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ]);
                 $orderId = $pdo->lastInsertId();
 
-                // Create order item
                 $stmt = $pdo->prepare('INSERT INTO order_items (order_id, product_id, quantity, price) VALUES (?, ?, ?, ?)');
                 $stmt->execute([$orderId, $product['id'], $quantity, $product['price']]);
 
                 $pdo->commit();
-                header('Location: thank_you.php');
+                header('Location: pages/thank_you.php');
                 exit;
             } catch (Exception $e) {
                 $pdo->rollBack();

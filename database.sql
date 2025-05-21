@@ -1,7 +1,6 @@
 CREATE DATABASE IF NOT EXISTS ecommerce;
 USE ecommerce;
 
--- Products table
 CREATE TABLE products (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
@@ -11,7 +10,6 @@ CREATE TABLE products (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Orders table
 CREATE TABLE orders (
     id INT AUTO_INCREMENT PRIMARY KEY,
     guest_email VARCHAR(255) NOT NULL,
@@ -22,7 +20,6 @@ CREATE TABLE orders (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Order items table
 CREATE TABLE order_items (
     id INT AUTO_INCREMENT PRIMARY KEY,
     order_id INT,
@@ -33,8 +30,7 @@ CREATE TABLE order_items (
     FOREIGN KEY (product_id) REFERENCES products(id)
 );
 
--- Insert sample products
 INSERT INTO products (name, description, price, image_url) VALUES
-('Smartphone', 'High-end smartphone with great camera', 699.99, 'images/smartphone.jpg'),
-('Laptop', '15.6" laptop with latest processor', 999.99, 'images/laptop.jpg');
+('Smartphone', 'High-end smartphone with great camera', 799.99),
+('Laptop', '15.6" laptop with latest processor', 999.99);
 
