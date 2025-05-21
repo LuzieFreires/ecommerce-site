@@ -11,36 +11,50 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     if (isset($_POST['process_payment'])) {
         $transaction_id = 'TRANS_' . time() . rand(1000, 9999);
-        $payment_success = true;
+        $payment_success = true;  // Simulated payment success
         
         if ($payment_success) {
-            $pdo->beginTransaction();
-            try {
-                $stmt = $pdo->prepare('INSERT INTO orders (guest_email, total_amount, shipping_address, transaction_id, status) VALUES (?, ?, ?, ?, ?)');
-                $stmt->execute([
-                    $_POST['email'],
-                    $total,
-                    $_POST['address'],
-                    $transaction_id,
-                    'completed'
-                ]);
-                $orderId = $pdo->lastInsertId();
+    $pdo->beginTransaction();
+    try {
+        $stmt = $pdo->prepare('INSERT INTO orders (guest_email, total_amount, shipping_address, transaction_id, status) VALUES (?, ?, ?, ?, ?)');
+        $stmt->execute([
+            $_POST['email'],
+            $total,
+            $_POST['address'],
+            $transaction_id,
+            'completed'
+        ]);
+        $orderId = $pdo->lastInsertId();
 
-                $stmt = $pdo->prepare('INSERT INTO order_items (order_id, product_id, quantity, price) VALUES (?, ?, ?, ?)');
-                $stmt->execute([$orderId, $product['id'], $quantity, $product['price']]);
+        $stmt = $pdo->prepare('INSERT INTO order_items (order_id, product_id, quantity, price) VALUES (?, ?, ?, ?)');
+        $stmt->execute([$orderId, $product['id'], $quantity, $product['price']]);
 
-                $pdo->commit();
-                header('Location: pages/thank_you.php');
-                exit;
-            } catch (Exception $e) {
-                $pdo->rollBack();
-                $error = "Order processing failed";
+  
+        $stmt = $pdo->prepare('INSERT INTO transactions (transaction_id, amount, description, customer_name, customer_email, card_last4, status) VALUES (?, ?, ?, ?, ?, ?, ?)');
+        $description = "Order #$orderId - " . $product['name'];
+        $cardLast4 = substr($_POST['card_number'], -4); 
+        $stmt->execute([
+            $transaction_id,
+            $total,
+            $description,
+            $_POST['email'],  
+            $_POST['email'],
+            $cardLast4,
+            'completed'
+        ]);
+
+        $pdo->commit();
+
+          header('Location: pages/transactions.php?payment=success');
+          exit;
+         } catch (Exception $e) {
+         $pdo->rollBack();
+           $error = "Order processing failed: " . $e->getMessage();
             }
-        } else {
-            $error = "Payment processing failed";
         }
     }
 }
+
 ?>
 <!DOCTYPE html>
 <html>
@@ -58,8 +72,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <?php endif; ?>
     
     <form method="post">
-        <input type="hidden" name="product_id" value="<?php echo $_POST['product_id']; ?>">
-        <input type="hidden" name="quantity" value="<?php echo $quantity; ?>">
+        <input type="hidden" name="product_id" value="<?php echo htmlspecialchars($_POST['product_id'] ?? ''); ?>">
+        <input type="hidden" name="quantity" value="<?php echo htmlspecialchars($quantity ?? 1); ?>">
         
         <div class="form-group">
             <label>Email:</label>
@@ -78,16 +92,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         <div class="form-group">
             <label>Expiration Date:</label>
-            <input type="text" value="">
+            <input type="text" name="expiration_date" value="">
         </div>
         
         <div class="form-group">
             <label>CVV:</label>
-            <input type="text" value="">
+            <input type="text" name="cvv" value="">
         </div>
         
         <div class="form-group">
-            <label>Total Amount: $<?php echo number_format($total, 2); ?></label>
+            <label>Total Amount: $<?php echo number_format($total ?? 0, 2); ?></label>
         </div>
         
         <button type="submit" name="process_payment">Complete Purchase</button>

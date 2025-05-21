@@ -6,7 +6,6 @@ CREATE TABLE products (
     name VARCHAR(255) NOT NULL,
     description TEXT,
     price DECIMAL(10,2) NOT NULL,
-    image_url VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -30,7 +29,22 @@ CREATE TABLE order_items (
     FOREIGN KEY (product_id) REFERENCES products(id)
 );
 
-INSERT INTO products (name, description, price, image_url) VALUES
-('Smartphone', 'High-end smartphone with great camera', 799.99),
-('Laptop', '15.6" laptop with latest processor', 999.99);
+CREATE TABLE transactions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    transaction_id VARCHAR(50) NOT NULL,
+    amount DECIMAL(10,2) NOT NULL,
+    description VARCHAR(255) NOT NULL,
+    customer_name VARCHAR(100) NOT NULL,
+    customer_email VARCHAR(100) NOT NULL,
+    card_last4 VARCHAR(4) NOT NULL,
+    status VARCHAR(20) NOT NULL,
+    auth_code VARCHAR(50),
+    avs_response VARCHAR(10),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY (transaction_id)
+);
+
+INSERT INTO products (name, description, price) VALUES
+('Smartphone', 'Smartphone with Great Camera', 799.99),
+('Laptop', 'Gaming Laptop', 999.99);
 

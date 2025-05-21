@@ -1,5 +1,5 @@
 <?php
-require_once '../config/db.php';
+require_once '../config/db.php'; 
 
 $stmt = $pdo->query('SELECT * FROM products');
 $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -14,15 +14,15 @@ $products = $stmt->fetchAll(PDO::FETCH_ASSOC);
     </style>
 </head>
 <body>
-    <h1>Our Products</h1>
+  <h1>Our Products</h1>
     <?php foreach($products as $product): ?>
         <div class="product">
-            <h2><?php echo htmlspecialchars($product['name']); ?></h2>
-            <p><?php echo htmlspecialchars($product['description']); ?></p>
-            <p>Price: $<?php echo number_format($product['price'], 2); ?></p>
+            <h2><?= htmlspecialchars($product['name']) ?></h2>
+            <p><?= htmlspecialchars($product['description']) ?></p>
+            <p>Price: $<?= number_format($product['price'], 2) ?></p>
             <form class="cart-form" action="../checkout.php" method="post">
-                <input type="hidden" name="product_id" value="<?php echo $product['id']; ?>">
-                <input type="number" name="quantity" value="1" min="1">
+                <input type="hidden" name="product_id" value="<?= (int)$product['id'] ?>">
+                <input type="number" name="quantity" value="1" min="1" required>
                 <button type="submit">Buy Now</button>
             </form>
         </div>
