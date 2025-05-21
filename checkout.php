@@ -3,12 +3,13 @@ require_once 'config/db.php';
 
 $error = '';
 $total = 0;
+$product = null;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $product_id = $_POST['product_id'] ?? null;
     $quantity = max(1, (int)($_POST['quantity'] ?? 1));
 
-    // Fetch product
+    // Get product info
     $stmt = $pdo->prepare('SELECT * FROM products WHERE id = ?');
     $stmt->execute([$product_id]);
     $product = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -19,7 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $total = $product['price'] * $quantity;
     }
 
-    // Process order if form submitted with payment details
+    // If payment processing triggered and no errors
     if (isset($_POST['process_payment']) && !$error) {
         $email = trim($_POST['email'] ?? '');
         $address = trim($_POST['address'] ?? '');
@@ -27,17 +28,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!$email || !$address) {
             $error = 'Email and address are required.';
         } else {
-            // Simulate payment success
+            // Generate fake transaction ID
             $transaction_id = 'TRANS_' . time() . rand(1000, 9999);
 
             $pdo->beginTransaction();
             try {
+                // Insert order
                 $stmt = $pdo->prepare('INSERT INTO orders (guest_email, total_amount, shipping_address, transaction_id, status) VALUES (?, ?, ?, ?, ?)');
                 $stmt->execute([$email, $total, $address, $transaction_id, 'completed']);
                 $orderId = $pdo->lastInsertId();
 
+                // Insert order items
                 $stmt = $pdo->prepare('INSERT INTO order_items (order_id, product_id, quantity, price) VALUES (?, ?, ?, ?)');
                 $stmt->execute([$orderId, $product['id'], $quantity, $product['price']]);
+
+                // Insert transaction (simplified)
+                $stmt = $pdo->prepare('INSERT INTO transactions (transaction_id, customer_name, customer_email, description, amount, card_last4, status, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())');
+                $stmt->execute([
+                    $transaction_id,
+                    $email,
+                    $email,
+                    "Purchase of {$product['name']} x $quantity",
+                    $total,
+                    '1234', // dummy last 4 digits
+                    'completed'
+                ]);
 
                 $pdo->commit();
 
@@ -54,7 +69,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <!DOCTYPE html>
 <html>
-<head><title>Checkout</title></head>
+<head>
+    <title>Checkout</title>
+</head>
 <body>
 <h1>Checkout</h1>
 
@@ -62,12 +79,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <p style="color:red;"><?php echo htmlspecialchars($error); ?></p>
 <?php endif; ?>
 
+<?php if ($product): ?>
 <form method="post">
-    <input type="hidden" name="product_id" value="<?php echo htmlspecialchars($product_id ?? ''); ?>">
-    <input type="hidden" name="quantity" value="<?php echo htmlspecialchars($quantity ?? 1); ?>">
+    <input type="hidden" name="product_id" value="<?php echo htmlspecialchars($product['id']); ?>">
+    <input type="hidden" name="quantity" value="<?php echo htmlspecialchars($quantity); ?>">
 
-    <p>Product: <?php echo htmlspecialchars($product['name'] ?? ''); ?></p>
-    <p>Quantity: <?php echo htmlspecialchars($quantity ?? 1); ?></p>
+    <p>Product: <?php echo htmlspecialchars($product['name']); ?></p>
+    <p>Quantity: <?php echo htmlspecialchars($quantity); ?></p>
     <p>Total: $<?php echo number_format($total, 2); ?></p>
 
     <p>Email:<br><input type="email" name="email" required></p>
@@ -79,6 +97,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <button type="submit" name="process_payment">Complete Purchase</button>
 </form>
+<?php else: ?>
+    <p>Invalid product selection.</p>
+<?php endif; ?>
 
 </body>
 </html>
