@@ -73,20 +73,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         <div class="form-group">
             <label>Card Number:</label>
-            <input type="text" name="card_number" value="4111111111111111" readonly>
-            <small>(Demo: Using test card number)</small>
+            <input type="text" name="card_number" value="">
         </div>
         
         <div class="form-group">
             <label>Expiration Date:</label>
-            <input type="text" value="12/25" readonly>
-            <small>(Demo: Using test expiration)</small>
+            <input type="text" value="">
         </div>
         
         <div class="form-group">
             <label>CVV:</label>
-            <input type="text" value="123" readonly>
-            <small>(Demo: Using test CVV)</small>
+            <input type="text" value="">
         </div>
         
         <div class="form-group">
